@@ -1,67 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="styles/index.css" rel="stylesheet">
-    <title>Medical Report Analyser</title>
+  <title>Medical Report Analyser</title>
 </head>
-<body style="background-color: #f5f9fc; ">
-    <%-include("header.ejs")%>
-    <div style="margin-top: 5%; margin-bottom: 13%;">
-    <div class="login-box"> <h1 style="text-align: center; margin-bottom: 1rem;">Add The Report To Analyse</h1>
 
-  <form id="uploadForm" style="text-align: center;">
-    <input type="file" id="imageInput" name="reportImage" accept="image/*" required>
-    <br> <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Upload</button>
-  </form>
+<body style="background-color: #f5f9fc;">
+  
+  <%- include('header.ejs') %>
 
-</div>
-
-<div style="margin-top: 20px;">
-  <h3 style="text-align: center;">Extracted Text:</h3>
-  <div id="resultBox" style="white-space: pre-wrap; background: #eee; padding: 15px; border-radius: 5px; max-width: 800px; margin: auto;">
-    Your report text will appear here...
+  <div class="login-box" style="margin-top: 5k; margin-bottom: 1rem;">
+    <h1 style="text-align: center; margin-bottom: 1rem;">Add The Report To Analyse</h1>
+    
+    <form id="uploadForm" style="text-align: center;">
+      <input type="file" id="imageInput" name="reportImage" accept="image/*" required>
+      <br>
+      <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Upload</button>
+    </form>
   </div>
-</div>
-  </form></div></div>
- 
 
-  <%-include("footer.ejs")%>
-</body>
-<script>
-  const uploadForm = document.getElementById('uploadForm');
-  const imageInput = document.getElementById('imageInput');
-  const resultBox = document.getElementById('resultBox');
+  <div style="margin-top: 20px;">
+    <h3 style="text-align: center;">Extracted Text:</h3>
+    <div id="resultBox" style="white-space: pre-wrap; background: #eee; padding: 15px; border-radius: 5px; max-width: 800px; margin: auto;">
+      Your report text will appear here...
+    </div>
+  </div>
 
-  uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); // Stop the page from reloading
+  <div style="text-align: center; margin-top: 25px; padding: 15px; background: #f9f9f9; border-radius: 5px; max-width: 800px; margin: auto;">
+    <h4>Get Food Suggestions</h4>
+    <p>Type a condition from your report (e.g., "diabetes", "hypertension")</p>
+    
+    <input type="text" id="conditionInput" placeholder="Enter health condition">
+    <button type="button" id="getFoodBtn">Get Food</button>
+    
+    <div id="foodResults" style="margin-top: 15px;"></div>
+  </div>
 
-    const formData = new FormData();
-    formData.append('reportImage', imageInput.files[0]);
 
-    resultBox.textContent = 'Processing... Please wait.';
+  <%- include('footer.ejs') %>
 
-    try {
-      // Send the image to the backend route you made
-      const response = await fetch('/scan-report', {
-        method: 'POST',
-        body: formData
-      });
+  
+  <script>
+    // 1. OCR Upload Script
+    const uploadForm = document.getElementById('uploadForm');
+    const imageInput = document.getElementById('imageInput');
+    const resultBox = document.getElementById('resultBox');
+  
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault(); // Stop the page from reloading
+      
+      const formData = new FormData();
+      formData.append('reportImage', imageInput.files[0]);
+  
+      resultBox.textContent = 'Processing... Please wait.';
+  
+      try {
+        const response = await fetch('/scan-report', {
+          method: 'POST',
+          body: formData
+        });
+  
+        const result = await response.json();
+  
+        if (result.extractedText) {
+          resultBox.textContent = result.extractedText;
+        } else {
+          resultBox.textContent = 'Error: ' + result.error;
+        }
+  
+      } catch (error) {
+        console.error('Error:', error);
+        resultBox.textContent = 'Failed to connect to the server.';
+      }
+    });
 
-      const result = await response.json();
 
-      if (result.extractedText) {
-        resultBox.textContent = result.extractedText;
-      } else {
-        resultBox.textContent = 'Error: ' + result.error;
+    // 2. Food Suggestion Script (This was missing and causing the crash)
+    const getFoodBtn = document.getElementById('getFoodBtn');
+    const conditionInput = document.getElementById('conditionInput');
+    const foodResults = document.getElementById('foodResults');
+
+    getFoodBtn.addEventListener('click', async () => {
+      const condition = conditionInput.value.toLowerCase().trim();
+      
+      if (condition === "") {
+        foodResults.innerHTML = "Please enter a condition.";
+        return;
       }
 
-    } catch (error) {
-      console.error('Error:', error);
-      resultBox.textContent = 'Failed to connect to the server.';
-    }
-  });
-</script>
+      foodResults.innerHTML = "Finding recipes...";
+
+      try {
+        const response = await fetch(/get-food-suggestion?condition=${condition});
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+          foodResults.innerHTML = "<h4>Recommended Recipes:</h4>";
+          data.results.forEach(recipe => {
+            foodResults.innerHTML += `
+              <div style="border: 1px solid #ccc; padding: 10px; margin-top: 5px; border-radius: 5px;">
+                <strong>${recipe.title}</strong>
+                <br>
+                <img src="${recipe.image}" width="100" style="margin-top: 5px;">
+              </div>
+            `;
+          });
+        } else {
+          foodResults.innerHTML = "No recipes found for that condition.";
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        foodResults.innerHTML = "Failed to get recipes.";
+      }
+    });
+  </script>
+
+</body>
 </html>

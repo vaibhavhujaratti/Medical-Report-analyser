@@ -111,3 +111,5 @@ app.get("/send",(req,res)=>{
 app.listen(port,()=>{
     console.log(`server running at ${port}`);
 })
+// It should look like this:
+const SPOONACULAR_API_KEY = "710ac0e6bea940b68e31c1e252c20c8a ";
