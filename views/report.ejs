@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Report</title>
+</head>
+<body>
+
+  <%- include('header') %>
+
+  <div class="container" style="padding-top: 20px;">
+
+    <h2>Add The Report To Analyse</h2>
+
+    <form id="uploadForm">
+      <input type="file" id="imageInput" name="reportImage" accept="image/*" required>
+      <button type="submit">Analyse</button>
+    </form>
+
+    <hr>
+
+    <h3>Extracted Text:</h3>
+    <div id="resultBox" style="white-space: pre-wrap; background: #eee; padding: 15px; border-radius: 5px;">
+      Your report text will appear here...
+    </div>
+
+  </div>
+
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const imageInput = document.getElementById('imageInput');
+    const resultBox = document.getElementById('resultBox');
+
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault(); // Stop the page from reloading
+
+      const formData = new FormData();
+      formData.append('reportImage', imageInput.files[0]);
+
+      resultBox.textContent = 'Processing... Please wait.';
+
+      try {
+        // Send the image to the backend route you made
+        const response = await fetch('/scan-report', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.extractedText) {
+          resultBox.textContent = result.extractedText;
+        } else {
+          resultBox.textContent = 'Error: ' + result.error;
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        resultBox.textContent = 'Failed to connect to the server.';
+      }
+    });
+  </script>
+
+</body>
+</html>
