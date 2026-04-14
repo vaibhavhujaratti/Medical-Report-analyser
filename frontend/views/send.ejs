@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="styles/modern.css" rel="stylesheet">
+    <title>Upload Report - Medical Report Analyser</title>
+    <style>
+        .upload-area {
+            border: 3px dashed var(--primary-color);
+            border-radius: var(--radius-lg);
+            background: rgba(102, 126, 234, 0.03);
+            padding: 3rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: var(--secondary-color);
+            background: rgba(102, 126, 234, 0.08);
+            transform: scale(1.02);
+        }
+        .upload-area.drag-over {
+            border-color: var(--success-color);
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .file-info {
+            display: none;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <%-include("header.ejs")%>
+
+    <div class="container my-5">
+        <div class="upload-container fade-in-up">
+            <!-- Upload Icon -->
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+
+            <!-- Title -->
+            <h2 class="text-center mb-2 fw-bold">
+                <span class="gradient-text">Upload Medical Report</span>
+            </h2>
+            <p class="text-center text-muted mb-4">Upload your medical report image for AI-powered analysis</p>
+
+            <!-- Upload Form -->
+            <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-file-medical" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h4 class="mb-3">Drag & Drop or Click to Upload</h4>
+                    <p class="text-muted mb-3">Supported formats: JPEG, PNG, GIF, BMP, TIFF</p>
+                    <p class="text-muted small">Maximum file size: 10MB</p>
+                    <input type="file" name="image" id="fileInput" accept="image/*" required class="d-none">
+                </div>
+
+                <!-- File Info -->
+                <div class="file-info" id="fileInfo">
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <div>
+                            <strong>File Selected:</strong> <span id="fileName"></span><br>
+                            <small>Size: <span id="fileSize"></span></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3" id="uploadBtn" disabled>
+                        <i class="fas fa-brain me-2"></i>Analyze with AI
+                    </button>
+                </div>
+            </form>
+
+            <!-- Features List -->
+            <div class="row mt-5 g-3">
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-lock text-success mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="fw-bold">Secure Upload</h6>
+                    <p class="small text-muted">Files deleted after analysis</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-bolt text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="fw-bold">Fast Processing</h6>
+                    <p class="small text-muted">Results in 5-15 seconds</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-chart-line text-primary mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="fw-bold">AI Insights</h6>
+                    <p class="small text-muted">Comprehensive analysis</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%-include("footer.ejs")%>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                displayFileInfo(file);
+            }
+        });
+
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('drag-over');
+            });
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                displayFileInfo(files[0]);
+            }
+        });
+
+        function displayFileInfo(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            fileInfo.style.display = 'block';
+            uploadBtn.disabled = false;
+        }
+    </script>
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
